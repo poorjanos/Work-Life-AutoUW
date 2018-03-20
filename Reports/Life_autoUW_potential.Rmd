@@ -1,0 +1,61 @@
+---
+title: 'Élet központi menesztés: lehetõség-elemzés'
+author: "Ajánlat Feldlgozó Centrum"
+date: '2018 március 20'
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+df <- read.csv(here::here("Data", "t_segmented.csv"), stringsAsFactors = FALSE)
+```
+
+## Szegmensek összehasonlítása {.columns-2}
+
+```{r, fig.height=4, fig.width=6}
+ggplot(
+  df %>% gather(MUTATO, ERTEK, DARAB:FTE),
+  aes(
+    x = IDOSZAK,
+    y = ERTEK,
+    group = SZEGMENS,
+    colour = SZEGMENS
+  )
+) +
+  geom_line() +
+  geom_point(shape=15) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(y = "Érték",
+       x = "Hónap",
+       colour = "Szegmens") +
+  facet_grid(MUTATO ~ ., scales = "free")
+```
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Data file overview
+```{r, echo = TRUE}
+str(df)
+```
+
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+
+
