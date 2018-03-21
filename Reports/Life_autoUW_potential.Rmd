@@ -20,7 +20,7 @@ library(ggthemes)
 ```
 
 
-Bevezetõ {data-navmenu="Tartalom"}
+Bevezetõ
 ===================================== 
 
 Column {data-width=300}
@@ -41,7 +41,7 @@ Column {data-width=700}
 ### Sikerarány és a hibaág manuális feldolgozásának FTE igénye 
 
 ```{r, fig.width = 8}
-cost_monthly <- read.csv(here::here("Data", "p1_cost_monthly.csv"))
+t_segments <- read.csv(here::here("Data", "t_segmented.csv"))
 
 ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
@@ -58,7 +58,7 @@ ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
 
 
 
-Sikerarány {.storyboard data-navmenu="Tartalom"}
+Sikerarány
 =========================================
 
 ### Ezen az ábrán automatikus kötvényesítés sikerességét a **teljes állományon** értékeljük ki több mutató mentén 
