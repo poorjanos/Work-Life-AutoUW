@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-    theme: spacelab
+    theme: cosmo
 ---
 
 ```{r setup, include=FALSE}
@@ -23,57 +23,79 @@ library(ggthemes)
 Bevezetõ
 ===================================== 
 
-Column {data-width=300}
+Column {data-width=500}
 -------------------------------------
 
-### Mirõl szól ez a riport?
+### Élet termékek feldolgozási szegmentációja
 
-* A kötvényesítési folyamatban keletkezõ költségek csökkentésének egyik eszköze az automatikus kötvényesítés (központi menesztés). A riport célja, hogy rendszeres adatszolgáltatást nyújtson az automatizmus mûködésének kiértékeléséhez és segítse annak további optimalizációját.  
-* A riport hónapról hónapra követi az automatikus kötvényesítés 
-    + sikerességét,
-    + a hibaokok és hibamintázatok összetételét, 
-    + és azon költségek alakulását, melyet a sikertelen ágon szenved el vállalat manuális munkaerõ-szükséglet formájában.
-* Használat: a fenti *Tartalom* gombra kattintva további lapok nyithatók mag
+* Ez az elemzés megmutatja, hogy a kötvényesítési folyamat oldaláról az életbiztosítási ajánlatok melyik csoportja (szegmense) az, ahol a leginkább hatékony lenne a központi menesztés kialakítása
+* A kötvényesítési folyamatban keletkezõ költségek csökkentésének egyik eszköze az automatikus kötvényesítés (központi menesztés). Életbiztosítási ajánlatok esetében jelenleg nem mûködik ez az automatizmus
+* Központi menesztést azon a szegmensen érdemes indítani, ahol jelenleg a legnagyobb manuális erõforrásokat használja föl a vállalat, és ahol a központi menesztés implementációját nem akadályozza a folyamat komplexitása
+* Ajánlatfeldolgozási komplexitás szempontjából három szegmenst azonosítottunk:
+    + Szegmens 1 - **Nincs** egészségi nyilatkozat: fel sem merül komplex, orvosi elbírálás szükségessége,
+    + Szegmens 2 - **Van** egészségi nyilatkozat, **de negatív**: felmerül a komplex, orvosi elbírálás lehetõsége, de nem szükséges a végrehajtása, 
+    + Szegmens 3 - **Van** egészségi nyilatkozat, **és pozitív**: elkerülhetetlen a komplex, orvosi elbírálás
+* A grafikon a három azonosított szegmens 2017-es havi darabszámait és FTE (nettó létszám) igényét mutatja meg
+    + A legerõforrásigényesebb szegmens (szegmens 3) egyben a legkompexebb is, hiszen itt kikerülhetetlen az orvosi bírálat
+    + A két mésik szegmens ugyanakkor egyzerûbb feldolozási logikát kíván és az folyamatban felhasznált erõforrás közel 50%-át teszi ki: az automatizkus kialakítása az 1-2 szegensekben javasolt
 
-Column {data-width=700}
+Column {data-width=500}
 -------------------------------------
 
-### Sikerarány és a hibaág manuális feldolgozásának FTE igénye 
+### Feldolgozási szegmensek volumene és erõforrásigénye 
 
-```{r, fig.width = 8}
-t_segments <- read.csv(here::here("Data", "t_segmented.csv"))
+```{r, fig.width = 8, fig.height = 6}
+t_life_2017 <- read.csv(here::here("Data", "t_life_2017.csv"))
 
-ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
-  geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
-  geom_line(aes(y = FTE/30, colour = "FTE igény")) +
-  geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
-  geom_point(aes(y = FTE/30, colour = "FTE igény")) +
-  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuáli FTE igénye [db]")) +
+t_segments <- t_life_2017 %>% filter(complete.cases(.)) %>%
+  mutate(
+    IDOSZAK = str_replace(str_sub(as.character(
+      floor_date(ymd_hms(F_ERKEZES), "month")
+    ), 1, 7), "-", "/"),
+    SZEGMENS = case_when (
+      .$SZEGMENS == 'Easy_nincseü' ~ 'S1_Nincs_EÜ',
+      .$SZEGMENS == 'Middle_negeü_nyug' ~ 'S2_Neg_EÜ',
+      TRUE ~ 'S3_Poz_EÜ'
+    )
+  ) %>%
+  group_by(IDOSZAK, SZEGMENS) %>%
+  summarise(DARAB = length(F_IVK),
+            FTE = sum(IDO_PERC) / 60 / 7 / 21) %>%
+  ungroup() %>% 
+  gather(MUTATO, ERTEK, DARAB:FTE)
+
+ggplot(t_segments, aes(IDOSZAK, ERTEK, group = SZEGMENS, colour = SZEGMENS)) +
+  geom_line() +
+  geom_point() +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(y = "Sikerarány a teljes feldlgozott állományban [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
-  theme(legend.position = c(0.8, 0.9))
+  facet_grid(MUTATO~., scales = 'free')
 ```
 
 
 
-Sikerarány
+Sikerarány {.storyboard}
 =========================================
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét a **teljes állományon** értékeljük ki több mutató mentén 
+### Szegmens 1 - **Nincs** egészségi nyilatkozat
 
-```{r, fig.width=10}
-auw_main <- read.csv(here::here("Data", "p2_auw_main.csv"))
+```{r}
+prod_struct <- t_life_2017 %>%  mutate(SZEGMENS = case_when (
+      .$SZEGMENS == 'Easy_nincseü' ~ 'S1_Nincs_EÜ',
+      .$SZEGMENS == 'Middle_negeü_nyug' ~ 'S2_Neg_EÜ',
+      TRUE ~ 'S3_Poz_EÜ'
+    )) %>% 
+  filter(RNEV != 'Egyéb') %>% 
+                          group_by(SZEGMENS, HNEV) %>% 
+                          summarise (TOTAL = n()) %>%
+                          mutate(RATIO = TOTAL / sum(TOTAL))
 
-ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató")
+ggplot(prod_struct, aes(factor(1), RATIO, fill = factor(HNEV), label = HNEV)) + 
+  geom_bar(stat = "identity") + 
+  geom_text(check_overlap = TRUE, size = 2, position = position_stack(vjust = 0.5)) +
+  facet_grid(.~SZEGMENS) +
+  facet_grid(.~SZEGMENS) +
+  #coord_polar(theta="y") +
+  theme_void()
 ```
 
 ***
@@ -83,21 +105,13 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 - **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
 - **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** értékeljük ki több mutató mentén
+###  Szegmens 1 - **Nincs** egészségi nyilatkozat
 
-```{r, fig.width=12, fig.height=6}
-auw_prod <- read.csv(here::here("Data", "p2_auw_prod.csv"))
-
-ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 8)) +
-  facet_grid(. ~ MODTYP) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
-  theme(legend.position = c(0.9, 0.8))
+```{r}
+ggplot(prod_struct %>% filter(SZEGMENS == "S1_Nincs_EÜ"), aes(factor(1), RATIO, fill = factor(HNEV))) +
+  geom_bar(stat = "identity") + 
+  coord_polar(theta="y") +
+  theme_void()
 ```
 
 ***
@@ -110,44 +124,7 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 ### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékeljük ki több mutató mentén
 
 ```{r, fig.width=12, fig.height=6}
-auw_prod_media <- read.csv(here::here("Data", "p2_auw_prod_media.csv"))
 
-ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        legend.position = "bottom") +
-  facet_grid(MODTYP ~ PAPIR_TIPUS) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
-  geom_jitter()
-```
-
-***
-Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
-
-- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
-- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
-- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
-
-### Ezen az ábrán automatikus kötvényesítés sikerességét a **KGFB** termékcsoporton és annak **kötési okaiként** értékeljük ki több mutató mentén
-
-```{r, fig.width=12, fig.height=6}
-auw_tpml_ctype <- read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
-
-ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 6),
-        legend.position = "bottom") +
-  facet_grid(. ~ GFB_KOTES_NEV) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõsuak",
-       colour = "Mérõszám") +
-  geom_jitter()
 ```
 
 ***

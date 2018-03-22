@@ -57,23 +57,8 @@ t_life_2017 <- dbGetQuery(jdbcConnection, segement_data)
 dbDisconnect(jdbcConnection)
 
 
-# Transform data ------------------------------------------------------------------------
-df_clean <- t_life_2017 %>% filter(complete.cases(.)) %>%
-  mutate(
-    IDOSZAK = str_replace(str_sub(as.character(
-      floor_date(ymd_hms(F_ERKEZES), "month")
-    ), 1, 7), "-", "/"),
-    SZEGMENS = case_when (
-      .$SZEGMENS == 'Easy_nincseü' ~ 'S1_NincsEÜ',
-      .$SZEGMENS == 'Middle_negeü_nyug' ~ 'S2_NegEÜ',
-      TRUE ~ 'S3_PozEÜSenior'
-    )
-  ) %>%
-  group_by(IDOSZAK, SZEGMENS) %>%
-  summarise(DARAB = length(F_IVK),
-            FTE = sum(IDO_PERC) / 60 / 7 / 21) %>%
-  ungroup()
+# Save res to local storage--------------------------------------------------------------
+write.csv(t_life_2017, here::here("Data", "t_life_2017.csv"), row.names = F)
 
 
-# Save input for analysis ---------------------------------------------------------------
-write.csv(df_clean, here::here("Data", "t_segmented.csv"), row.names = FALSE)
+
