@@ -20,7 +20,7 @@ library(ggthemes)
 ```
 
 
-Bevezetõ
+Szegmentáció
 ===================================== 
 
 Column {data-width=500}
@@ -73,10 +73,10 @@ ggplot(t_segments, aes(IDOSZAK, ERTEK, group = SZEGMENS, colour = SZEGMENS)) +
 
 
 
-Sikerarány {.storyboard}
+Termékösszetétel 
 =========================================
 
-### Szegmens 1 - **Nincs** egészségi nyilatkozat
+### Termékek eloszlása a szegmenseken belül 
 
 ```{r}
 prod_struct <- t_life_2017 %>%  mutate(SZEGMENS = case_when (
@@ -85,54 +85,22 @@ prod_struct <- t_life_2017 %>%  mutate(SZEGMENS = case_when (
       TRUE ~ 'S3_Poz_EÜ'
     )) %>% 
   filter(RNEV != 'Egyéb') %>% 
-                          group_by(SZEGMENS, HNEV) %>% 
+                          group_by(SZEGMENS, RNEV) %>% 
                           summarise (TOTAL = n()) %>%
                           mutate(RATIO = TOTAL / sum(TOTAL))
 
-ggplot(prod_struct, aes(factor(1), RATIO, fill = factor(HNEV), label = HNEV)) + 
+ggplot(prod_struct, aes(factor(1), RATIO, fill = factor(RNEV), label = RNEV)) + 
   geom_bar(stat = "identity") + 
   geom_text(check_overlap = TRUE, size = 2, position = position_stack(vjust = 0.5)) +
   facet_grid(.~SZEGMENS) +
   facet_grid(.~SZEGMENS) +
+  scale_y_continuous(label = percent) +
+  scale_x_discrete(breaks=NULL) +
+  theme(legend.position="none") +
+  labs(x = "SZEGMENS",
+       y = "ARÁNY")
   #coord_polar(theta="y") +
-  theme_void()
+  #theme_void()
 ```
-
-***
-Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
-
-- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
-- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
-- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
-
-###  Szegmens 1 - **Nincs** egészségi nyilatkozat
-
-```{r}
-ggplot(prod_struct %>% filter(SZEGMENS == "S1_Nincs_EÜ"), aes(factor(1), RATIO, fill = factor(HNEV))) +
-  geom_bar(stat = "identity") + 
-  coord_polar(theta="y") +
-  theme_void()
-```
-
-***
-Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
-
-- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
-- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
-- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
-
-### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékeljük ki több mutató mentén
-
-```{r, fig.width=12, fig.height=6}
-
-```
-
-***
-Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
-
-- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
-- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
-- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
-
 
 

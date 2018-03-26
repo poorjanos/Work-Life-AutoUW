@@ -4,6 +4,7 @@
 
 # Outputs
 *.html
+*.Rmd
 
 # History files
 .Rhistory
