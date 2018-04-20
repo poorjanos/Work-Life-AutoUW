@@ -5,6 +5,9 @@
 # Outputs
 *.html
 *.Rmd
+*.png
+*.ppt
+*.pptx
 
 # History files
 .Rhistory
